@@ -153,6 +153,49 @@ def kppv(DataApp,DataTest,labelApp,K,Nt_test):
 
 
     return Partition
+    
+
+def classifier_k_nearest_neighbors(points, labels, point, k):
+    """
+    points : tableau 2D des coordonnées des points d'entraînement
+    labels : tableau des étiquettes de classe des points d'entraînement
+    point : point pour lequel la classe est à prédire
+    k : nombre de voisins les plus proches à considérer
+    """
+    # Calcul des distances entre le point donné et tous les autres points
+    distances = np.linalg.norm(points - point, axis=1)
+    
+    # Trouver les indices des k plus proches voisins
+    nearest_neighbors_indices = np.argsort(distances)[:k]
+    
+    # Récupérer les classes des k plus proches voisins
+    nearest_labels = labels[nearest_neighbors_indices]
+    
+    # Compter le nombre de voisins par classe
+    label_counts = Counter(nearest_labels)
+    
+    # Trouver la ou les classes ayant le plus de voisins
+    max_count = max(label_counts.values())
+    candidate_classes = [label for label, count in label_counts.items() if count == max_count]
+    
+    if len(candidate_classes) == 1:
+        # S'il y a une seule classe majoritaire, la retourner
+        return candidate_classes[0]
+    else:
+        # S'il y a un ex æquo, prendre la classe du point le plus proche
+        for idx in nearest_neighbors_indices:
+            if labels[idx] in candidate_classes:
+                return labels[idx]
+
+# Exemple d'utilisation
+points = np.array([[1, 1], [2, 2], [3, 3], [6, 6], [7, 7]])  # Coordonnées des points
+labels = np.array([0, 0, 1, 1, 2])  # Classes des points
+new_point = np.array([4, 4])  # Point pour lequel prédire la classe
+k = 3
+
+classe_predite = classifier_k_nearest_neighbors(points, labels, new_point, k)
+print(f"La classe prédite pour le point {new_point} est : {classe_predite}")
+
 
 # Choix du nombre de voisins
 K = 1;
@@ -164,6 +207,9 @@ Nt_test = int(Nt/1000); # A changer, pouvant aller jusqu'a Nt
 
 # Classement par aux k-ppv
 Partition = kppv(DataApp,DataTest,LabelApp,K,Nt_test);
+
+# Si deux classes ont le même nombre de voisins, la classe du point le plus proche doit être attribuée.
+classifier_k_nearest_neighbors(DataTest,LabelApp,DataApp,K);
 
 # Affichage des résultats de prédiction et de vérité terrainMatriceConfusion=np.zeros((10,10))
 print('Resultat Kppv',Partition.T)
